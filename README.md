@@ -1,6 +1,4 @@
-# Project Description
-
-## Control Strategies for Two-Wheeled Inverted Pendulum
+# Control Strategies for Two-Wheeled Inverted Pendulum
 
 This repository presents a comprehensive study and implementation of various control strategies for a two-wheeled inverted pendulum system—akin to a Segway. The project aims to evaluate and compare multiple advanced control methods to achieve robust stability and performance under diverse operating conditions.
 
