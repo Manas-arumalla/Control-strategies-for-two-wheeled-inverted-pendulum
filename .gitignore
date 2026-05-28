@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# MATLAB
+*.asv
+*.autosave
+slprj/
+*.mex*
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+
+# OS files
+.DS_Store
+Thumbs.db
