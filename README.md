@@ -74,7 +74,7 @@ The physics are simulated in MuJoCo (`segway.xml`) at 1 kHz, so every controller
 <div align="center">
 <img src="docs/lqr_response.png" alt="LQR stabilization response" width="680"/>
 <br/>
-<sub>A representative closed-loop run: the LQR controller drives the tilt angle back to vertical after a 0.2 rad disturbance, with the base returning near its origin and a smooth, bounded control effort.</sub>
+<sub>A representative closed-loop run: the LQR controller drives the tilt angle back to vertical after a 0.2 rad disturbance, with the base returning to its origin after a short excursion.</sub>
 </div>
 
 ---
@@ -107,19 +107,58 @@ Additional experimental controllers explored in the study (in `Matlab/Remod/Not 
 
 ## Benchmark
 
-To compare strategies on equal footing, several controllers were run on the identical MuJoCo plant, each recovering from the same 0.2 rad initial tilt:
+Every controller was tuned with the same genetic-algorithm procedure and evaluated on the identical model, each recovering from the same initial tilt. The table reports the settling time of the **pendulum angle** and the **base position** for each strategy, sorted by how quickly the tilt is brought under control.
 
-<div align="center">
-<img src="docs/benchmark.png" alt="Control-strategy benchmark" width="860"/>
-</div>
+| Control strategy | Pendulum-angle settling (s) | Base-position settling (s) |
+|------------------|:---------------------------:|:--------------------------:|
+| **NDI + SMC** | **0.234** | 0.808 |
+| LQR + SMC + Backstepping | 0.495 | 2.009 |
+| Pole Placement | 0.690 | 0.740 |
+| H-infinity | 0.720 | 0.896 |
+| LQR | 0.960 | 0.890 |
+| LPV | 1.145 | 1.412 |
+| LQR + L1 Adaptive | 1.147 | 2.437 |
+| Carleman Linearisation + LQR | 1.510 | 1.150 |
+| Sliding Mode (SMC) | 2.424 | 4.633 |
+| EPSAC | 2.500 | 2.700 |
+| MPC | 3.500 | 2.765 |
 
-| Controller | Settling time | Control effort | Character |
-|------------|:-------------:|:--------------:|-----------|
-| **Pole Placement** | ~1.1 s | high (saturating) | fastest recovery, aggressive use of the actuator |
-| **LQR** | ~2.4 s | low (RMS ≈ 2.4 N) | smooth, energy-efficient, well-damped |
-| **Sliding Mode (SMC)** | ~4.0 s | high (saturating) | robust to model error, some chattering |
+**Key findings.** NDI + SMC achieved the fastest balance recovery (0.234 s on the pendulum angle), with Pole Placement and H-infinity also settling in under a second. LQR delivered the best overall trade-off between speed, smoothness and control effort, while the predictive methods (MPC, EPSAC) traded raw speed for explicit constraint handling. Several controllers stabilize the tilt quickly but take longer to recentre the base — a reminder that this underactuated system forces a genuine compromise between the two objectives.
 
-*Settling measured as the tilt angle staying within ±0.02 rad. Pole placement and SMC drive the actuator to its ±50 N limit during recovery, trading control effort for speed and robustness, while LQR achieves a comfortable balance between settling time and effort.*
+<details>
+<summary><b>Per-controller response plots</b> (click to expand)</summary>
+
+<br/>
+
+Each plot shows the base position, pendulum (tilt) angle and control signal as the controller recovers from an initial disturbance.
+
+**LQR** &nbsp; → see [The System](#the-system) above
+
+**Pole Placement**
+![Pole Placement response](docs/plots/response_pole_placement.png)
+
+**MPC**
+![MPC response](docs/plots/response_mpc.png)
+
+**Sliding Mode Control**
+![SMC response](docs/plots/response_smc.png)
+
+**LQR + SMC + Backstepping**
+![LQR + SMC + Backstepping response](docs/plots/response_lqr_smc_backstepping.png)
+
+**LPV**
+![LPV response](docs/plots/response_lpv.png)
+
+**EPSAC**
+![EPSAC response](docs/plots/response_epsac.png)
+
+**Carleman Linearisation + LQR**
+![Carleman + LQR response](docs/plots/response_carleman_lqr.png)
+
+**LQR + L1 Adaptive**
+![LQR + L1 Adaptive response](docs/plots/response_lqr_l1_adaptive.png)
+
+</details>
 
 ---
 
@@ -129,7 +168,7 @@ The project follows the same workflow for every controller:
 
 1. **Modelling (MATLAB).** The nonlinear equations of motion are derived (`Dynamics_Redo.mlx`) and linearized about the upright equilibrium to obtain the state-space model above.
 2. **Controller design (MATLAB).** Each strategy is synthesized for the plant — gain matrices, sliding surfaces, prediction horizons, observers, and so on — and validated in MATLAB (see the per-strategy PDF reports).
-3. **Parameter optimization.** Rather than hand-tuning, each controller's parameters are optimized with a **genetic algorithm** (DEAP / PyGAD in Python, custom routines in MATLAB) that minimizes the closed-loop **settling time** for recovery from an initial tilt. Every strategy folder contains both the controller and its `optim_*` optimizer, along with the resulting tuned parameters.
+3. **Parameter optimization.** Rather than hand-tuning, a generalized **genetic-algorithm** framework (DEAP / PyGAD in Python, custom routines in MATLAB) tunes every controller. Each controller's parameters are encoded as a chromosome and a fitness function scores closed-loop **settling time and stability** for recovery from an initial tilt. The same procedure was applied across all the self-balancing controllers, yielding tuned parameters such as the LQR weights $Q = \mathrm{diag}(9786.7,\, 0.75,\, 0.63,\, 1.22),\ R = 0.001$. Every strategy folder contains both the controller and its `optim_*` optimizer alongside the resulting parameters.
 4. **Physics validation (Python + MuJoCo).** The tuned controllers are run against the full nonlinear dynamics in MuJoCo to confirm they hold up beyond the linear design model.
 
 ---
@@ -181,7 +220,7 @@ Open the `.m` file for any strategy in `Matlab/Remod/<strategy>/` and run it in 
 
 ## Reproducing the Figures
 
-The plots in this README are produced from the simulation by stabilizing the MuJoCo model from a 0.2 rad tilt and recording the state and control trajectories — the base-position, tilt-angle and control-force histories shown above come directly from those runs.
+The per-controller response plots and the benchmark settling times come from the MATLAB and Python simulations, recorded as each tuned controller stabilizes the model from an initial tilt. The balancing animation at the top is rendered directly from the MuJoCo model under closed-loop control.
 
 ---
 
