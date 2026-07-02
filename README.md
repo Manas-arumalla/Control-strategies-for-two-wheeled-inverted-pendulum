@@ -1,3 +1,6 @@
+> [!NOTE]
+> **This project has a successor:** [segway-control-suite](https://github.com/Manas-arumalla/segway-control-suite) re-implements and benchmarks these control strategies in Python/MuJoCo with a tested, CI-verified suite. This repository remains the original MATLAB modeling & derivation work.
+
 <div align="center">
 
 # Control Strategies for a Two-Wheeled Inverted Pendulum
